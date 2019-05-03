@@ -95,23 +95,20 @@ int lab2_node_insert(lab2_tree *tree, lab2_node *new_node){
     node = new_node;
 
     while(t_root != NULL){
-        if(key == t_root->key) {
-            node_count++;
-            
-	    return 0;
-        }
+        if(key == t_root->key){
+            node_count++;            
+	    return 0;}
         parent = t_root;
 	
 	if(key < t_root->key) t_root = t_root->left;
 	else t_root = t_root->right;
     }
 
-    if(parent == NULL) {
+    if(parent == NULL){
         tree->root = node;
         node_count++;
+        return 0;}
 
-        return 0;
-    }
     if(key < parent->key) parent->left = node;
     else parent->right = node;
 
@@ -148,46 +145,45 @@ int lab2_node_insert_cg(lab2_tree *tree, lab2_node *new_node){
 
 int lab2_node_remove(lab2_tree *tree, int key) {
 //erase node function
-    lab2_node *parent = NULL, *child, *success, *parent_s, 
+    lab2_node *parent = NULL, *child, *success, *success_p, 
 	      *t_root = tree->root;
-   ./ node_count--;
     
-    while(t_root->key != key && t_root != NULL ){
-        parent = t_root;
-	if (key < t_root->key) t_root = t_root->left;
-     	else t_root = t_root->right;}
-
-    if(t_root == NULL) return 0;
-
-    if( (t_root->right == NULL) && (t_root->left == NULL) ){
-        if(parent != NULL){
-            if( parent->left == t_root ) parent->left = NULL; 
-            else parent->right = NULL;} 
-        else tree->root = NULL;} 
+    node_count--;
     
-    else if( (t_root->right == NULL) || (t_root->left == NULL) ){
-        {  if(t_root->left != NULL) child = t_root->left;
-	   else child = t_root->right;}
-        
-	if( parent != NULL ){
-            if( parent->left == t_root ) parent->left = child;
-            else parent->right = child;} 
-        else tree->root = child;} 
-    
-    else {
-        parent_s = t_root;
-        success = t_root->right;
-        while( success->left != NULL ){
-            parent_s = success;
-            success = success->left;}
-        if( parent_s->left == success )parent_s->left = success->right;
-        else parent_s->right = success->right;
+        while(t_root != NULL && t_root->key != key){
+        	parent = t_root;
+		{ if(key < t_root->key) t_root = t_root->left;
+	  	  else t_root = t_root->right;}     	
+	}
+    	
+	if(t_root == NULL) {
+        return 0;}
 
-        t_root->key = success->key;
-        t_root = success;}
+    	if((t_root->left == NULL) && (t_root->right == NULL)){
+        	if(parent != NULL){
+            		if(parent->left == t_root) parent->left = NULL;
+	    		else parent->right = NULL;} 
+		else tree->root = NULL;} 
 
+    	else if((t_root->left == NULL)||(t_root->right == NULL)){
+        	{ if(t_root->left != NULL) child = t_root->left;
+	  	   else child =  t_root -> right;}
+	        if( parent != NULL ){
+            		if(parent->left == t_root) parent->left = child;
+            		else parent->right = child;} 
+        	else tree->root = child;} 
 
-    t_root=NULL;
+    	else {  success_p = t_root;
+        	success = t_root->right;
+       		while(success->left != NULL){
+            		success_p = success;
+            		success = success->left;}
+
+        	if(success_p->left == success) success_p->left = success->right;
+        	else success_p->right = success->right;
+        	     t_root->key = success->key;
+        	     t_root = success;}
+
     return 0;
 }
 
