@@ -2,7 +2,7 @@
 *   Operating System Lab
 *       Lab2 (Synchronization)
 *       Student id : 32141444     32144777        32130182
-*       Student name : Kim HeeJu  Choi YoungJae   Yun ChanYoung
+*       Student name : Kim HeeJu  Choi YoungJae   Yoon ChanYoung
 *
 *   lab2_bst.c :
 *       - thread-safe bst code.
@@ -127,6 +127,43 @@ int lab2_node_insert(lab2_tree *tree, lab2_node *new_node){
  */
 int lab2_node_insert_fg(lab2_tree *tree, lab2_node *new_node){
     // You need to implement lab2_node_insert function.
+
+ lab2_node *parent = NULL,
+              *node,
+              *t_root = tree->root;
+
+    int key = new_node->key;
+    node = new_node;
+
+    while(t_root != NULL){
+        if(key == t_root->key){
+	pthread_mutex_lock(&tree->mutex);
+            node_count++;            
+	pthread_mutex_unlock(&tree->mutex);
+	    return 0;}
+        parent = t_root;
+	pthread_mutex_lock(&tree->mutex);
+	if(key < t_root->key) t_root = t_root->left;
+	else t_root = t_root->right;
+	pthread_mutex_unlock(&tree->mutex);
+    }
+
+    if(parent == NULL){
+        pthread_mutex_lock(&tree->mutex);
+	tree->root = node;
+        node_count++;
+	pthread_mutex_unlock(&tree->mutex);
+        return 0;}
+
+	pthread_mutex_lock(&tree->mutex);
+    if(key < parent->key) parent->left = node;
+    else parent->right = node;
+
+    node_count++;
+	pthread_mutex_unlock(&tree->mutex);
+    return 0;
+
+
 }
 
 /* 
@@ -139,6 +176,39 @@ int lab2_node_insert_fg(lab2_tree *tree, lab2_node *new_node){
  */
 int lab2_node_insert_cg(lab2_tree *tree, lab2_node *new_node){
     // You need to implement lab2_node_insert_cg function.
+	
+	  lab2_node *parent = NULL,
+              *node,
+              *t_root = tree->root;
+
+	pthread_mutex_lock(&tree->mutex);
+
+    int key = new_node->key;
+    node = new_node;
+
+    while(t_root != NULL){
+        if(key == t_root->key){
+            node_count++;        
+		pthread_mutex_unlock(&tree->mutex);    
+	    return 0;}
+        parent = t_root;
+	
+	if(key < t_root->key) t_root = t_root->left;
+	else t_root = t_root->right;
+    }
+
+    if(parent == NULL){
+        tree->root = node;
+        node_count++;
+		pthread_mutex_unlock(&tree->mutex);    
+        return 0;}
+
+    if(key < parent->key) parent->left = node;
+    else parent->right = node;
+
+    node_count++;
+		pthread_mutex_unlock(&tree->mutex);    
+    return 0;
    }
 
 
@@ -200,6 +270,59 @@ int lab2_node_remove(lab2_tree *tree, int key) {
  */
 int lab2_node_remove_fg(lab2_tree *tree, int key) {
     // You need to implement lab2_node_remove function.
+    lab2_node *parent = NULL, *child, *success, *success_p, 
+	      *t_root = tree->root;
+    pthread_mutex_lock(&tree->mutex);
+    node_count--;
+    pthread_mutex_unlock(&tree->mutex);
+
+        while(t_root != NULL && t_root->key != key){
+		pthread_mutex_lock(&tree->mutex);        	
+		parent = t_root;
+		pthread_mutex_unlock(&tree->mutex);
+		pthread_mutex_lock(&tree->mutex);
+		{ if(key < t_root->key) t_root = t_root->left;
+	  	  else t_root = t_root->right;}     	
+		pthread_mutex_unlock(&tree->mutex);
+	}
+
+	if(t_root == NULL) {
+        return 0;}
+
+    	if((t_root->left == NULL) && (t_root->right == NULL)){
+		pthread_mutex_lock(&tree->mutex);
+        	if(parent != NULL){
+            		if(parent->left == t_root) {
+			parent->left = NULL;
+			}
+	    		else parent->right = NULL;} 
+		else tree->root = NULL;
+		pthread_mutex_unlock(&tree->mutex);} 
+
+    	else if((t_root->left == NULL)||(t_root->right == NULL)){
+		pthread_mutex_lock(&tree->mutex);
+        	{ if(t_root->left != NULL) child = t_root->left;
+	  	   else child =  t_root -> right;}
+	        if( parent != NULL ){
+            		if(parent->left == t_root) parent->left = child;
+            		else parent->right = child;} 
+        	else tree->root = child;
+		pthread_mutex_unlock(&tree->mutex);} 
+
+    	else {  pthread_mutex_lock(&tree->mutex);
+		success_p = t_root;
+        	success = t_root->right;
+       		while(success->left != NULL){
+            		success_p = success;
+            		success = success->left;}
+
+        	if(success_p->left == success) success_p->left = success->right;
+        	else success_p->right = success->right;
+        	     t_root->key = success->key;
+        	     t_root = success;
+		pthread_mutex_unlock(&tree->mutex);}
+
+    return 0;
 }
 
 
@@ -213,6 +336,48 @@ int lab2_node_remove_fg(lab2_tree *tree, int key) {
  */
 int lab2_node_remove_cg(lab2_tree *tree, int key) {
     // You need to implement lab2_node_remove_cg function.
+    lab2_node *parent = NULL, *child, *success, *success_p, 
+	      *t_root = tree->root;
+    pthread_mutex_lock(&tree->mutex);
+    node_count--;
+    
+        while(t_root != NULL && t_root->key != key){
+        	parent = t_root;
+		{ if(key < t_root->key) t_root = t_root->left;
+	  	  else t_root = t_root->right;}     	
+	}
+    pthread_mutex_unlock(&tree->mutex);
+
+	if(t_root == NULL) {
+        return 0;}
+	
+    pthread_mutex_lock(&tree->mutex);	
+    	if((t_root->left == NULL) && (t_root->right == NULL)){
+        	if(parent != NULL){
+            		if(parent->left == t_root) parent->left = NULL;
+	    		else parent->right = NULL;} 
+		else tree->root = NULL;} 
+
+    	else if((t_root->left == NULL)||(t_root->right == NULL)){
+        	{ if(t_root->left != NULL) child = t_root->left;
+	  	   else child =  t_root -> right;}
+	        if( parent != NULL ){
+            		if(parent->left == t_root) parent->left = child;
+            		else parent->right = child;} 
+        	else tree->root = child;} 
+
+    	else {  success_p = t_root;
+        	success = t_root->right;
+       		while(success->left != NULL){
+            		success_p = success;
+            		success = success->left;}
+
+        	if(success_p->left == success) success_p->left = success->right;
+        	else success_p->right = success->right;
+        	     t_root->key = success->key;
+        	     t_root = success;}
+    pthread_mutex_unlock(&tree->mutex);
+    return 0;
  
 }
 
